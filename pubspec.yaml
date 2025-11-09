@@ -1,0 +1,9 @@
+name: root
+description: Monorepo for Diesel Dart
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dev_dependencies:
+  lints: ^6.0.0
