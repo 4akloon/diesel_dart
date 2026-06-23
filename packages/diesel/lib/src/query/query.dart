@@ -101,9 +101,8 @@ final class Query<Scope> {
     );
   }
 
-  /// Finish the query with a row decoder. The decoder reads columns via the
-  /// [RowReader], so it can build a scalar, a record, a data class, or nested
-  /// objects — one method for every arity and shape.
+  /// Attach a row decoder. The result is still chainable via [MappedQuery.orderBy],
+  /// [MappedQuery.limit], and friends.
   MappedQuery<R> map<R>(R Function(RowReader reader) decode) =>
       MappedQuery._(this, decode);
 
@@ -170,4 +169,17 @@ final class MappedQuery<R> implements SelectQuery<R> {
   @override
   R Function(List<Object?>) get rowDecoder =>
       (row) => _decode(RowReader(_columnIndex, row));
+
+  /// Further refine the query while keeping the row decoder.
+  MappedQuery<R> orderBy(Ordering ordering) =>
+      MappedQuery._(_query.orderBy(ordering), _decode);
+
+  MappedQuery<R> limit(int count) =>
+      MappedQuery._(_query.limit(count), _decode);
+
+  MappedQuery<R> offset(int count) =>
+      MappedQuery._(_query.offset(count), _decode);
+
+  MappedQuery<R> where(Expression<bool, dynamic> predicate) =>
+      MappedQuery._(_query.where(predicate), _decode);
 }

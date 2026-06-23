@@ -119,6 +119,10 @@ abstract interface class QuerySource<Tbl> {
   String get table; // real table name (FROM/JOIN target)
   String? get alias; // alias, or null
   List<Column<Object?, Object?>> get columns;
+
+  /// Rebinds a base-table column to this source's effective name (identity on
+  /// [TableRef], alias-bound on [TableAlias]).
+  Column<T, Tbl> col<T>(Column<T, Tbl> column);
 }
 
 /// Table descriptor: its name and full column list (the default projection for
@@ -135,7 +139,10 @@ final class TableRef<Tbl> implements QuerySource<Tbl> {
   @override
   String? get alias => null;
 
-  /// Alias this table for a self-join — `Users.table.alias('sender')`.
+  @override
+  Column<T, Tbl> col<T>(Column<T, Tbl> column) => column;
+
+  /// Alias this table for a self-join — `Users.table.aliased('sender')`.
   TableAlias<Tbl> aliased(String alias) => TableAlias(alias, this);
 }
 
@@ -156,6 +163,7 @@ final class TableAlias<Tbl> implements QuerySource<Tbl> {
       [for (final c in base.columns) ValueColumn<Object?, Tbl>(alias, c.name, c.type)];
 
   /// An alias-bound version of one of the base table's columns.
+  @override
   Column<T, Tbl> col<T>(Column<T, Tbl> column) =>
       ValueColumn<T, Tbl>(alias, column.name, column.type);
 }

@@ -14,6 +14,7 @@ abstract final class Users {
   static const name = ValueColumn<String, Users>('users', 'name', SqlType.text);
   static const age = ValueColumn<int, Users>('users', 'age', SqlType.integer);
   static const active = ValueColumn<int, Users>('users', 'active', SqlType.integer);
-  static const table = TableRef<Users>('users', [id, name, age, active]);
+  static const managerId = Ref<int?, Users, Users>('users', 'manager_id', SqlType.integerOrNull, references: Users.id);
+  static const table = TableRef<Users>('users', [id, name, age, active, managerId]);
 }
 
