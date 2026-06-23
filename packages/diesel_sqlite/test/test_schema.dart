@@ -79,7 +79,7 @@ class User {
 
 User readUser(RowReader r) =>
     User(r.get(Users.id), r.get(Users.name), r.get(Users.age), r.get(Users.active));
-const userQueryable = Queryable<User>(readUser);
+const userQueryable = RowMapper<User>(readUser);
 
 class Post {
   final int id;
@@ -94,7 +94,7 @@ class Post {
 
 Post readPost(RowReader r) => Post(
     r.get(Posts.id), r.get(Posts.authorId), r.get(Posts.title), r.get(Posts.views));
-const postQueryable = Queryable<Post>(readPost);
+const postQueryable = RowMapper<Post>(readPost);
 
 class Comment {
   final int id;
@@ -107,4 +107,4 @@ class Comment {
 
 Comment readComment(RowReader r) =>
     Comment(r.get(Comments.id), r.get(Comments.postId), r.get(Comments.body));
-const commentQueryable = Queryable<Comment>(readComment);
+const commentQueryable = RowMapper<Comment>(readComment);

@@ -12,4 +12,5 @@ workspace:
   - packages/diesel
   - packages/diesel_sqlite
   - packages/diesel_cli
+  - packages/diesel_codegen
   - example

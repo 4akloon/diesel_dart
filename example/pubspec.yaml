@@ -15,3 +15,6 @@ dependencies:
 dev_dependencies:
   # Provides the `diesel_dart` migration CLI: dart run diesel_cli:diesel_dart ...
   diesel_cli: ^0.0.1
+  # Row-mapper codegen: dart run build_runner build
+  diesel_codegen: ^0.0.1
+  build_runner: ^2.4.0

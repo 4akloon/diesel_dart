@@ -24,7 +24,7 @@ Future<void> main() async {
     from(Posts.table)
         .innerJoin(Users.table, onFk: Posts.authorId)
         .orderBy(Posts.views.desc())
-        .map((r) => readPost(r).withAuthor(readUser(r))),
+        .map((r) => postMapper.read(r).withAuthor(userMapper.read(r))),
   );
 
   print('Posts with authors:');

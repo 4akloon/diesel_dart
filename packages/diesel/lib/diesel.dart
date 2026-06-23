@@ -6,6 +6,7 @@
 /// separate packages (e.g. `diesel_sqlite`).
 library;
 
+export 'src/annotations.dart';
 export 'src/ast/sql_node.dart' show Ordering;
 export 'src/connection.dart';
 export 'src/expression/expression.dart';

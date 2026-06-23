@@ -21,9 +21,9 @@ abstract interface class SelectQuery<R> {
 /// emits one of these (a single `read` built from `RowReader.get` calls). They
 /// compose freely — a `Comment` reader can call a `Post` reader on the same
 /// [RowReader] to nest objects, with no arity-specific machinery.
-final class Queryable<R> {
+final class RowMapper<R> {
   final R Function(RowReader reader) read;
-  const Queryable(this.read);
+  const RowMapper(this.read);
 }
 
 /// Immutable SELECT builder.
@@ -107,8 +107,8 @@ final class Query<Scope> {
   MappedQuery<R> map<R>(R Function(RowReader reader) decode) =>
       MappedQuery._(this, decode);
 
-  /// Like [map] but using a reusable [Queryable] (the codegen output).
-  MappedQuery<R> mapWith<R>(Queryable<R> queryable) => map(queryable.read);
+  /// Like [map] but using a reusable [RowMapper] (the codegen output).
+  MappedQuery<R> mapWith<R>(RowMapper<R> mapper) => map(mapper.read);
 
   Query<Scope> _copy({
     List<Column<Object?, Object?>>? projection,
