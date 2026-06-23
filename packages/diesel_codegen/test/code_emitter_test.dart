@@ -73,7 +73,7 @@ void main() {
       final args = relationCalls.forReader([authorEdge], (_) => true);
       expect(
         args.single.childCall,
-        r"budget <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', budget - 1)",
+        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1)",
       );
     });
 
@@ -81,7 +81,7 @@ void main() {
       final args = relationCalls.forReader([authorEdge], (_) => false);
       expect(
         args.single.childCall,
-        r"budget <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
+        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
       );
     });
   });

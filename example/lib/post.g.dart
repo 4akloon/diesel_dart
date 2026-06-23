@@ -14,10 +14,13 @@ Post $PostFromRow(RowReader r,
       id: r.get(src.col(Posts.id)),
       title: r.get(src.col(Posts.title)),
       views: r.get(src.col(Posts.views)),
-      author: budget <= 0
+      author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0
           ? null
-          : $UserFromRow(r, Users.table.aliased('${prefix}author'),
-              '${prefix}author_', budget - 1),
+          : $UserFromRow(
+              r,
+              Users.table.aliased('${prefix}author'),
+              '${prefix}author_',
+              (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1),
     );
 
 const postMapper = RowMapper<Post>($PostFromRow);
@@ -27,7 +30,7 @@ MappedQuery<Post> get postQuery {
   final authorManager = Users.table.aliased('author_manager');
   return from(Posts.table)
       .innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))
-      .innerJoin(authorManager,
+      .leftJoin(authorManager,
           on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))
       .map((r) => $PostFromRow(r, Posts.table, '', 2));
 }

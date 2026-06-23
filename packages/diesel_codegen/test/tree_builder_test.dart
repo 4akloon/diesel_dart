@@ -18,6 +18,7 @@ void main() {
     depth: 1,
     parentMarker: 'Users',
     fkAccessor: 'managerId',
+    fkNullable: true,
     targetMarker: 'Users',
     targetClass: 'User',
     pkAccessor: 'id',

@@ -159,8 +159,10 @@ final class TableAlias<Tbl> implements QuerySource<Tbl> {
   String get table => base.name;
 
   @override
-  List<Column<Object?, Object?>> get columns =>
-      [for (final c in base.columns) ValueColumn<Object?, Tbl>(alias, c.name, c.type)];
+  List<Column<Object?, Object?>> get columns => [
+        for (final c in base.columns)
+          ValueColumn<Object?, Tbl>(alias, c.name, c.type)
+      ];
 
   /// An alias-bound version of one of the base table's columns.
   @override

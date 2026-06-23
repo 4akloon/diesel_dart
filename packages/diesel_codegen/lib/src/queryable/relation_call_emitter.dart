@@ -25,10 +25,20 @@ final class RelationCallEmitter {
   String _call(RelationEdge edge, bool targetHasRelations) {
     final reader = '\$${edge.targetClass}FromRow';
     final alias = "${edge.targetMarker}.table.aliased('\${prefix}${edge.fieldName}')";
+    // Cap budget per root relation: join trees are per-edge but the query
+    // seeds one global budget (max root depth). Nested calls keep `budget`.
+    final budget =
+        "prefix.isEmpty ? (budget > ${edge.depth} ? ${edge.depth} : budget) : budget";
+    final String read;
     if (!targetHasRelations) {
-      return 'budget <= 0 ? null : $reader(r, $alias)';
+      read = '$reader(r, $alias)';
+    } else {
+      final childPrefix = "'\${prefix}${edge.fieldName}_'";
+      read = '$reader(r, $alias, $childPrefix, ($budget) - 1)';
     }
-    final childPrefix = "'\${prefix}${edge.fieldName}_'";
-    return 'budget <= 0 ? null : $reader(r, $alias, $childPrefix, budget - 1)';
+    final fk =
+        'r.get(src.col(${edge.parentMarker}.${edge.fkAccessor})) == null';
+    final whenFkNull = edge.fkNullable ? '$fk ? null : ' : '';
+    return '($budget) <= 0 ? null : $whenFkNull$read';
   }
 }

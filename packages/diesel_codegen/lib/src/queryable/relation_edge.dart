@@ -4,6 +4,7 @@ final class RelationEdge {
   final int depth;
   final String parentMarker;
   final String fkAccessor;
+  final bool fkNullable;
   final String targetMarker;
   final String targetClass;
   final String pkAccessor;
@@ -13,6 +14,7 @@ final class RelationEdge {
     required this.depth,
     required this.parentMarker,
     required this.fkAccessor,
+    this.fkNullable = false,
     required this.targetMarker,
     required this.targetClass,
     required this.pkAccessor,

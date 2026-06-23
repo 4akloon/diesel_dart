@@ -15,10 +15,15 @@ User $UserFromRow(RowReader r,
       r.get(src.col(Users.name)),
       r.get(src.col(Users.age)),
       r.get(src.col(Users.active)),
-      manager: budget <= 0
+      manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0
           ? null
-          : $UserFromRow(r, Users.table.aliased('${prefix}manager'),
-              '${prefix}manager_', budget - 1),
+          : r.get(src.col(Users.managerId)) == null
+              ? null
+              : $UserFromRow(
+                  r,
+                  Users.table.aliased('${prefix}manager'),
+                  '${prefix}manager_',
+                  (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1),
     );
 
 const userMapper = RowMapper<User>($UserFromRow);
@@ -26,6 +31,6 @@ const userMapper = RowMapper<User>($UserFromRow);
 MappedQuery<User> get userQuery {
   final manager = Users.table.aliased('manager');
   return from(Users.table)
-      .innerJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))
+      .leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))
       .map((r) => $UserFromRow(r, Users.table, '', 1));
 }

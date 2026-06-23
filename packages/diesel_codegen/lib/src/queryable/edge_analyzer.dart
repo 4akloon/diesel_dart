@@ -17,6 +17,16 @@ const mapColumnChecker = TypeChecker.typeNamed(MapColumn, inPackage: 'diesel');
 const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'diesel');
 const ignoreChecker = TypeChecker.typeNamed(Ignore, inPackage: 'diesel');
 
+/// ponytail: top-level so depth guard is unit-testable without analyzer mocks.
+int validateRelationDepth(int depth, Element element) {
+  if (depth < 1) {
+    throw InvalidGenerationSourceError(
+        '@Relation depth must be at least 1 (got $depth).',
+        element: element);
+  }
+  return depth;
+}
+
 /// Parses `@Relation` / `@MapColumn` metadata from analyzer elements.
 final class EdgeAnalyzer {
   const EdgeAnalyzer();
@@ -43,7 +53,8 @@ final class EdgeAnalyzer {
     }
 
     final relAnn = relationChecker.firstAnnotationOfExact(field)!;
-    final depth = relAnn.getField('depth')?.toIntValue() ?? 1;
+    final depth = validateRelationDepth(
+        relAnn.getField('depth')?.toIntValue() ?? 1, field);
     final colObj = relAnn.getField('column');
     if (colObj == null) {
       throw InvalidGenerationSourceError(
@@ -73,11 +84,16 @@ final class EdgeAnalyzer {
           element: field);
     }
 
+    final fkType = colType.typeArguments[0];
+    final fkNullable =
+        fkType.nullabilitySuffix == NullabilitySuffix.question;
+
     return RelationEdge(
       fieldName: param.name!,
       depth: depth,
       parentMarker: parentMarker,
       fkAccessor: camelCase(sqlName),
+      fkNullable: fkNullable,
       targetMarker: targetMarker,
       targetClass: targetClass.name!,
       pkAccessor: camelCase(pkSqlName),

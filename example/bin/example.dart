@@ -72,8 +72,8 @@ Future<void> _generatedQueries(Connection db) async {
   _header('Generated self-mapping join queries');
 
   // `postQuery` is `depth: 2`, so each Post carries its author AND the author's
-  // manager. Being an INNER JOIN, posts whose author has no manager (Carol's
-  // "Untitled") are intentionally excluded.
+  // manager (when present). Nullable FKs use LEFT JOIN, so Carol's "Untitled"
+  // still appears — with `author.manager == null`.
   final posts = await db.fetch(postQuery.orderBy(Posts.views.desc()));
   print('Posts with author + author.manager (most viewed first):');
   for (final p in posts) {
@@ -83,7 +83,10 @@ Future<void> _generatedQueries(Connection db) async {
   // A self-referential relation: users joined to their own manager row. The
   // getter is still a `MappedQuery`, so we can keep refining it.
   final managed = await db.fetch(
-    userQuery.where(Users.active.eq(1)).orderBy(Users.name.asc()),
+    userQuery
+        .where(Users.active.eq(1))
+        .where(Users.managerId.isNotNull())
+        .orderBy(Users.name.asc()),
   );
   print('\nActive users that report to someone:');
   for (final u in managed) {
@@ -145,7 +148,8 @@ Future<void> _manualJoins(Connection db) async {
     from(Posts.table)
         .leftJoin(Users.table, onFk: Posts.authorId)
         .orderBy(Posts.id.asc())
-        .map((r) => '${postMapper.read(r).title} <- ${userMapper.read(r).name}'),
+        .map(
+            (r) => '${postMapper.read(r).title} <- ${userMapper.read(r).name}'),
   );
   print('Every post with its author (leftJoin): $joined');
 
@@ -165,8 +169,7 @@ Future<void> _manualJoins(Connection db) async {
   final pairs = await db.fetch(
     from(Users.table)
         .innerJoin(mgr, on: Users.managerId.eqColumn(mgr.col(Users.id)))
-        .map((r) =>
-            '${r.get(Users.name)} -> ${r.get(mgr.col(Users.name))}'),
+        .map((r) => '${r.get(Users.name)} -> ${r.get(mgr.col(Users.name))}'),
   );
   print('Reporting lines (name -> manager): $pairs');
 }

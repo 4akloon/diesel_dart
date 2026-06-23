@@ -72,11 +72,13 @@ final class Query<Scope> {
   /// condition either explicitly (`on:`) or by a foreign key (`onFk:` — its
   /// `column = referenced-pk` becomes the `ON`). Use `on:` for self-joins.
   Query<Object?> innerJoin<Other>(QuerySource<Other> other,
-          {Expression<bool, Object?>? on, Ref<Object?, Object?, Object?>? onFk}) =>
+          {Expression<bool, Object?>? on,
+          Ref<Object?, Object?, Object?>? onFk}) =>
       _join(JoinKind.inner, other, on, onFk);
 
   Query<Object?> leftJoin<Other>(QuerySource<Other> other,
-          {Expression<bool, Object?>? on, Ref<Object?, Object?, Object?>? onFk}) =>
+          {Expression<bool, Object?>? on,
+          Ref<Object?, Object?, Object?>? onFk}) =>
       _join(JoinKind.left, other, on, onFk);
 
   Query<Object?> _join<Other>(JoinKind kind, QuerySource<Other> other,

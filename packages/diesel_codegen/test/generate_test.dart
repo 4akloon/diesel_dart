@@ -26,6 +26,7 @@ void main() {
     depth: 1,
     parentMarker: 'Users',
     fkAccessor: 'managerId',
+    fkNullable: true,
     targetMarker: 'Users',
     targetClass: 'User',
     pkAccessor: 'id',
@@ -93,7 +94,7 @@ void main() {
     expect(
         code,
         contains(
-            r"manager: budget <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', budget - 1)"));
+            r"manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : r.get(src.col(Users.managerId)) == null ? null : $UserFromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1)"));
     expect(code, contains('MappedQuery<User> get userQuery'));
     expect(code, contains(r".map((r) => $UserFromRow(r, Users.table, '', 1))"));
   });
@@ -109,7 +110,7 @@ void main() {
     expect(
         code,
         contains(
-            r"author: budget <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))"));
+            r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))"));
     expect(code, contains('MappedQuery<Post> get postQuery'));
     expect(
       code,
@@ -135,13 +136,13 @@ void main() {
     expect(
         code,
         contains(
-            r"author: budget <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', budget - 1)"));
+            r"author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1)"));
     expect(code,
         contains("final authorManager = Users.table.aliased('author_manager');"));
     expect(
       code,
       contains(
-          '.innerJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))'),
+          '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))'),
     );
     expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
     // Post does not define a User reader; that lives in User's own file.
