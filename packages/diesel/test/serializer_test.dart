@@ -110,6 +110,14 @@ void main() {
       expect(sql, 'DELETE FROM "users" WHERE ("users"."age" < ?)');
       expect(params, [18]);
     });
+
+    test('INSERT binds a null for a nullable column', () {
+      final (sql, params) = compileWrite(
+        insertInto(Profiles.table).value(Profiles.id.set(1)).value(Profiles.bio.set(null)),
+      );
+      expect(sql, 'INSERT INTO "profiles" ("id", "bio") VALUES (?, ?)');
+      expect(params, [1, null]);
+    });
   });
 
   group('JOIN serialization', () {

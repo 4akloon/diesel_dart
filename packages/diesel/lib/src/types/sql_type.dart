@@ -23,6 +23,22 @@ class SqlType<T> {
   /// Stored as epoch milliseconds (sortable and timezone-free).
   static const SqlType<DateTime> dateTime =
       SqlType('INTEGER', _encDateTime, _decDateTime);
+
+  // Nullable variants — use these for columns that allow NULL. Their decoders
+  // map a NULL row value to `null` (the non-null ones throw on NULL, which
+  // correctly surfaces an unexpected NULL in a non-null column).
+  static const SqlType<int?> integerOrNull =
+      SqlType('INTEGER', _encNullable, _decIntOrNull);
+  static const SqlType<String?> textOrNull =
+      SqlType('TEXT', _encNullable, _decStringOrNull);
+  static const SqlType<double?> realOrNull =
+      SqlType('REAL', _encNullable, _decDoubleOrNull);
+  static const SqlType<bool?> booleanOrNull =
+      SqlType('INTEGER', _encBoolOrNull, _decBoolOrNull);
+  static const SqlType<List<int>?> blobOrNull =
+      SqlType('BLOB', _encNullable, _decBlobOrNull);
+  static const SqlType<DateTime?> dateTimeOrNull =
+      SqlType('INTEGER', _encDateTimeOrNull, _decDateTimeOrNull);
 }
 
 Object? _encInt(int v) => v;
@@ -43,3 +59,20 @@ List<int> _decBlob(Object? r) => r as List<int>;
 Object? _encDateTime(DateTime v) => v.millisecondsSinceEpoch;
 DateTime _decDateTime(Object? r) =>
     DateTime.fromMillisecondsSinceEpoch((r as num).toInt());
+
+// Nullable helpers. `_encNullable` accepts `Object?`, so it serves every type
+// whose stored form is the value itself (int/String/double/blob).
+Object? _encNullable(Object? v) => v;
+
+int? _decIntOrNull(Object? r) => r == null ? null : (r as num).toInt();
+String? _decStringOrNull(Object? r) => r as String?;
+double? _decDoubleOrNull(Object? r) => r == null ? null : (r as num).toDouble();
+
+Object? _encBoolOrNull(bool? v) => v == null ? null : (v ? 1 : 0);
+bool? _decBoolOrNull(Object? r) => r == null ? null : (r as num) != 0;
+
+List<int>? _decBlobOrNull(Object? r) => r as List<int>?;
+
+Object? _encDateTimeOrNull(DateTime? v) => v?.millisecondsSinceEpoch;
+DateTime? _decDateTimeOrNull(Object? r) =>
+    r == null ? null : DateTime.fromMillisecondsSinceEpoch((r as num).toInt());

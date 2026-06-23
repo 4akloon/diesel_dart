@@ -152,6 +152,27 @@ void main() {
     expect(m.recipient.name, 'Carol'); // resolved from the "recipient" alias
   });
 
+  test('nullable column round-trips null and non-null', () async {
+    await db.executeSql('CREATE TABLE profiles (id INTEGER PRIMARY KEY, bio TEXT)');
+    await db.execute(insertInto(Profiles.table).value(Profiles.id.set(1)).value(Profiles.bio.set('hello')));
+    await db.execute(insertInto(Profiles.table).value(Profiles.id.set(2)).value(Profiles.bio.set(null)));
+
+    final List<String?> bios = await db.fetch(
+      from(Profiles.table).orderBy(Profiles.id.asc()).map((r) => r.get(Profiles.bio)),
+    );
+    expect(bios, ['hello', null]);
+
+    final withBio = await db.fetch(
+      from(Profiles.table).where(Profiles.bio.isNotNull()).map((r) => r.get(Profiles.id)),
+    );
+    expect(withBio, [1]);
+
+    final withoutBio = await db.fetch(
+      from(Profiles.table).where(Profiles.bio.isNull()).map((r) => r.get(Profiles.id)),
+    );
+    expect(withoutBio, [2]);
+  });
+
   test('transaction rolls back on error', () async {
     await seed();
     await expectLater(

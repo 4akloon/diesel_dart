@@ -42,6 +42,14 @@ abstract final class Messages {
       TableRef<Messages>(_t, [id, senderId, recipientId, body]);
 }
 
+/// Has a nullable column (`bio TEXT NULL`).
+abstract final class Profiles {
+  static const _t = 'profiles';
+  static const id = PrimaryKey<int, Profiles>(_t, 'id', SqlType.integer);
+  static const bio = ValueColumn<String?, Profiles>(_t, 'bio', SqlType.textOrNull);
+  static const table = TableRef<Profiles>(_t, [id, bio]);
+}
+
 /// A message with both participants resolved (each from a different alias of
 /// the users table).
 class Message {

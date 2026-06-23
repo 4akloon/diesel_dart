@@ -43,6 +43,14 @@ abstract final class Messages {
       TableRef<Messages>(_t, [id, senderId, recipientId, body]);
 }
 
+/// Has a nullable column (`bio TEXT NULL`).
+abstract final class Profiles {
+  static const _t = 'profiles';
+  static const id = PrimaryKey<int, Profiles>(_t, 'id', SqlType.integer);
+  static const bio = ValueColumn<String?, Profiles>(_t, 'bio', SqlType.textOrNull);
+  static const table = TableRef<Profiles>(_t, [id, bio]);
+}
+
 // Data classes + reusable RowReader-based decoders — exactly what codegen would
 // emit for `@Queryable(...)`. Decoders compose (a Comment can embed a Post that
 // embeds a User) with no arity-specific machinery.
