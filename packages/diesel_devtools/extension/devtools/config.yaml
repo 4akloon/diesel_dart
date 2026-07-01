@@ -1,0 +1,5 @@
+name: diesel_devtools
+issueTracker: https://github.com/diesel-rs/diesel/issues
+version: 0.0.1
+materialIconCodePoint: '0xe63a'
+requiresConnection: true

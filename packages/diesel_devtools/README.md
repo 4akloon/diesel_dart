@@ -33,6 +33,15 @@ DieselDevTools.register(conn, name: 'main');
 Run your app with the VM service enabled (Flutter debug mode does this automatically; for a CLI use
 `dart run --observe …`), open DevTools, and select the **diesel** tab.
 
+The extension's compiled web app (`extension/devtools/build/`) is git-ignored; build it once from the
+UI app before the tab will load:
+
+```bash
+cd devtools_extension
+dart run devtools_extensions build_and_copy \
+  --source=. --dest=../packages/diesel_devtools/extension/devtools
+```
+
 Backend-agnostic: because it targets the `Connection` interface, the same inspector works for SQLite and
 Postgres with no extra code.
 
