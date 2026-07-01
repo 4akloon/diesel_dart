@@ -24,6 +24,16 @@ abstract final class Parts {
   static const table = TableRef<Parts>('parts', [id, widgetId, label]);
 }
 
+// Native Postgres bool + timestamp — exercises the cross-backend codecs.
+abstract final class Flags {
+  static const id = PrimaryKey<int, Flags>('flags', 'id', SqlType.integer);
+  static const active =
+      ValueColumn<bool, Flags>('flags', 'active', SqlType.boolean);
+  static const createdAt =
+      ValueColumn<DateTime, Flags>('flags', 'created_at', SqlType.dateTime);
+  static const table = TableRef<Flags>('flags', [id, active, createdAt]);
+}
+
 void main() {
   late PostgresConnection db;
   var available = true;
@@ -52,12 +62,15 @@ void main() {
 
   setUp(() async {
     if (!available) return;
-    await db.executeSql('DROP TABLE IF EXISTS parts; DROP TABLE IF EXISTS widgets;');
+    await db.executeSql('DROP TABLE IF EXISTS parts; '
+        'DROP TABLE IF EXISTS widgets; DROP TABLE IF EXISTS flags;');
     await db.executeSql('CREATE TABLE widgets '
         '(id INTEGER PRIMARY KEY, name TEXT NOT NULL, qty INTEGER NOT NULL)');
     await db.executeSql('CREATE TABLE parts '
         '(id INTEGER PRIMARY KEY, widget_id INTEGER NOT NULL REFERENCES widgets(id), '
         'label TEXT NOT NULL)');
+    await db.executeSql('CREATE TABLE flags '
+        '(id INTEGER PRIMARY KEY, active BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL)');
   });
 
   bool skip() {
@@ -147,6 +160,29 @@ void main() {
           .load(db),
       isEmpty,
     );
+  });
+
+  test('native bool + timestamp columns round-trip', () async {
+    if (skip()) return;
+    final ts = DateTime.utc(2024, 1, 15, 12, 30, 45);
+    await db.execute(insertInto(Flags.table).values([
+      [Flags.id.set(1), Flags.active.set(true), Flags.createdAt.set(ts)],
+      [Flags.id.set(2), Flags.active.set(false), Flags.createdAt.set(ts)],
+    ]));
+
+    // Native boolean predicate + decode.
+    final activeIds = await from(Flags.table)
+        .where(Flags.active.eq(true))
+        .map((r) => r.get(Flags.id))
+        .load(db);
+    expect(activeIds, [1]);
+
+    final (active, at) = await from(Flags.table)
+        .findBy(Flags.id, 1)
+        .map((r) => (r.get(Flags.active), r.get(Flags.createdAt)))
+        .first(db);
+    expect(active, isTrue);
+    expect(at.toUtc(), ts);
   });
 
   test('introspect reports columns, pk, fk, nullability', () async {

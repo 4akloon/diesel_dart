@@ -13,6 +13,14 @@ final class _TestDialect implements SqlDialect {
 
   @override
   String placeholder(int index) => '?';
+
+  // Mirrors SQLite: bool -> int, DateTime -> epoch-ms.
+  @override
+  Object? encodeParam(Object? value) {
+    if (value is bool) return value ? 1 : 0;
+    if (value is DateTime) return value.millisecondsSinceEpoch;
+    return value;
+  }
 }
 
 CompiledQuery compileSelect(SelectQuery<dynamic> s) =>

@@ -14,4 +14,9 @@ final class PostgresDialect implements SqlDialect {
 
   @override
   String placeholder(int index) => '\$${index + 1}';
+
+  /// Postgres binds `bool` and `DateTime` natively, so canonical values pass
+  /// through unchanged.
+  @override
+  Object? encodeParam(Object? value) => value;
 }

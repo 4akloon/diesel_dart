@@ -14,6 +14,13 @@ instances are `const` (which is what lets columns be `static const` and usable i
 | `SqlType.blob` | `List<int>` | `BLOB` | |
 | `SqlType.dateTime` | `DateTime` | `INTEGER` | Stored as epoch milliseconds (sortable, timezone-free). |
 
+## Cross-backend values
+
+Encoders produce a **canonical** Dart value (`bool` stays `bool`, `DateTime` stays `DateTime`); each backend's
+`SqlDialect.encodeParam` adapts it to the driver form — SQLite maps `bool`→`int` and `DateTime`→epoch-ms, while
+Postgres binds them natively. Decoders are lenient (accept either representation). So the same schema and query
+DSL run unchanged on SQLite and Postgres.
+
 ## Nullable variants
 
 For columns that allow `NULL`, use the `*OrNull` variants — the column type becomes `T?`:

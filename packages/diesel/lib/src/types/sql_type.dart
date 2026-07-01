@@ -50,15 +50,18 @@ String _decString(Object? r) => r as String;
 Object? _encDouble(double v) => v;
 double _decDouble(Object? r) => (r as num).toDouble();
 
-Object? _encBool(bool v) => v ? 1 : 0;
-bool _decBool(Object? r) => (r as num) != 0;
+// Encoders produce a canonical Dart value; each dialect's `encodeParam` maps it
+// to the driver form (SQLite: bool->int, DateTime->epoch-ms; Postgres: native).
+// Decoders are lenient so they read back either representation.
+Object? _encBool(bool v) => v;
+bool _decBool(Object? r) => r is bool ? r : (r as num) != 0;
 
 Object? _encBlob(List<int> v) => v;
 List<int> _decBlob(Object? r) => r as List<int>;
 
-Object? _encDateTime(DateTime v) => v.millisecondsSinceEpoch;
+Object? _encDateTime(DateTime v) => v;
 DateTime _decDateTime(Object? r) =>
-    DateTime.fromMillisecondsSinceEpoch((r as num).toInt());
+    r is DateTime ? r : DateTime.fromMillisecondsSinceEpoch((r as num).toInt());
 
 // Nullable helpers. `_encNullable` accepts `Object?`, so it serves every type
 // whose stored form is the value itself (int/String/double/blob).
@@ -68,11 +71,13 @@ int? _decIntOrNull(Object? r) => r == null ? null : (r as num).toInt();
 String? _decStringOrNull(Object? r) => r as String?;
 double? _decDoubleOrNull(Object? r) => r == null ? null : (r as num).toDouble();
 
-Object? _encBoolOrNull(bool? v) => v == null ? null : (v ? 1 : 0);
-bool? _decBoolOrNull(Object? r) => r == null ? null : (r as num) != 0;
+Object? _encBoolOrNull(bool? v) => v;
+bool? _decBoolOrNull(Object? r) =>
+    r == null ? null : (r is bool ? r : (r as num) != 0);
 
 List<int>? _decBlobOrNull(Object? r) => r as List<int>?;
 
-Object? _encDateTimeOrNull(DateTime? v) => v?.millisecondsSinceEpoch;
-DateTime? _decDateTimeOrNull(Object? r) =>
-    r == null ? null : DateTime.fromMillisecondsSinceEpoch((r as num).toInt());
+Object? _encDateTimeOrNull(DateTime? v) => v;
+DateTime? _decDateTimeOrNull(Object? r) => r == null
+    ? null
+    : (r is DateTime ? r : DateTime.fromMillisecondsSinceEpoch((r as num).toInt()));

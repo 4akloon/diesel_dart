@@ -8,4 +8,9 @@ abstract interface class SqlDialect {
 
   /// Placeholder for the [index]-th (0-based) bound parameter.
   String placeholder(int index);
+
+  /// Converts an already-encoded (canonical) parameter to the form this backend's
+  /// driver expects — SQLite maps `bool`→`int` and `DateTime`→epoch-ms, while
+  /// Postgres passes them through natively. Applied to every bound value.
+  Object? encodeParam(Object? value);
 }

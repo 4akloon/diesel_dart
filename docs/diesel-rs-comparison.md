@@ -74,8 +74,8 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 
 | Concept | diesel-rs | diesel_dart | Status |
 |---|---|---|---|
-| Integer/text/real/bool/blob | `sql_types::*` | `SqlType.integer/text/real/boolean/blob` | ✅ (SQLite mappings) |
-| Timestamp | `Timestamp`/`Timestamptz` | `SqlType.dateTime` (epoch ms in SQLite) | ◑ |
+| Integer/text/real/bool/blob | `sql_types::*` | `SqlType.integer/text/real/boolean/blob` | ✅ (SQLite + Postgres) |
+| Timestamp | `Timestamp`/`Timestamptz` | `SqlType.dateTime` (canonical `DateTime`; SQLite epoch-ms, PG native) | ✅ |
 | Nullable | `Nullable<T>` | `SqlType.*OrNull` (`T?`) | ✅ |
 | Custom / enum codecs | `#[derive(...)]` + `ToSql`/`FromSql` | custom `const SqlType<T>(sqlName, encode, decode)` | ✅ |
 | Postgres numeric/json/uuid/array | native | — | ✗ (ROADMAP M5) |
@@ -96,7 +96,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Backend | diesel-rs | diesel_dart | Status |
 |---|---|---|---|
 | SQLite | ✅ | ✅ | ✅ |
-| Postgres | ✅ (primary) | `PostgresConnection` + introspection on `package:postgres`, verified vs PG 16 | ✅ (native type codecs + CLI wiring pending) |
+| Postgres | ✅ (primary) | `PostgresConnection` + introspection on `package:postgres`, verified vs PG 16 | ✅ (advanced PG types + CLI wiring pending) |
 | MySQL | ✅ | — | ✗ (ROADMAP M6) |
 
 ## Database compatibility (sharing one DB with the Rust CLI)

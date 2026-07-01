@@ -282,7 +282,7 @@ final class QueryBuilder {
   /// Registers a bound parameter and returns its placeholder.
   String _bind(Object? value) {
     final placeholder = dialect.placeholder(_params.length);
-    _params.add(value);
+    _params.add(dialect.encodeParam(value));
     return placeholder;
   }
 

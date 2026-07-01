@@ -91,10 +91,13 @@ Done:
   (`information_schema`: tables/columns/nullability/PKs/FKs). **Verified end-to-end against Postgres 16 (Docker)** —
   the same typed query DSL runs on SQLite and Postgres unchanged.
 
+- Cross-backend type codecs: `SqlType` encoders produce canonical Dart values and each dialect's `encodeParam`
+  adapts them (SQLite `bool`→int / `DateTime`→epoch-ms; Postgres native), with lenient decoders. `int`/`text`/
+  `real`/`bool`/`DateTime` all round-trip on both backends (verified against SQLite and PG 16).
+
 Remaining:
 - Wire `postgres://` into the CLI's `ConnectionFactory` (migrations + `print-schema` against Postgres).
-- PG-native type codecs (`bool`, `timestamptz`, `uuid`, `json`/`jsonb`, `numeric`, arrays); today `int`/`text`/
-  `real` columns work directly (the SQLite-oriented `bool`/`DateTime` codecs need per-dialect handling).
+- Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
 
 ## ⬜ M6 — Later
 

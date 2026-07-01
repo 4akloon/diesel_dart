@@ -18,6 +18,13 @@ abstract final class Accounts {
   static const table = TableRef<Accounts>('accounts', [id, role]);
 }
 
+abstract final class Events {
+  static const id = PrimaryKey<int, Events>('events', 'id', SqlType.integer);
+  static const done = ValueColumn<bool, Events>('events', 'done', SqlType.boolean);
+  static const at = ValueColumn<DateTime, Events>('events', 'at', SqlType.dateTime);
+  static const table = TableRef<Events>('events', [id, done, at]);
+}
+
 void main() {
   late SqliteConnection db;
 
@@ -386,6 +393,24 @@ void main() {
     expect(byAuthor[1]!.map((p) => p.title), ['a', 'b']);
     expect(byAuthor[2], isEmpty); // Alice has no posts, but the key is present
     expect(byAuthor[3]!.map((p) => p.title), ['c']);
+  });
+
+  test('bool + DateTime round-trip (canonical encode; SQLite stores int/epoch-ms)',
+      () async {
+    await db.executeSql(
+        'CREATE TABLE events (id INTEGER PRIMARY KEY, done INTEGER NOT NULL, at INTEGER NOT NULL)');
+    final ts = DateTime.utc(2024, 3, 1, 8, 0, 0);
+    await db.execute(insertInto(Events.table)
+        .value(Events.id.set(1))
+        .value(Events.done.set(true))
+        .value(Events.at.set(ts)));
+
+    final (done, at) = await from(Events.table)
+        .findBy(Events.id, 1)
+        .map((r) => (r.get(Events.done), r.get(Events.at)))
+        .first(db);
+    expect(done, isTrue);
+    expect(at.toUtc(), ts);
   });
 
   test('custom SqlType codec (enum) round-trips', () async {
