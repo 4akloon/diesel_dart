@@ -254,6 +254,7 @@ If you're coming from diesel-rs, several methods read the same way (the Dart-idi
 | `query.load(conn)` | `query.load(db)` |
 | `query.first(conn)` | `query.first(db)` — throws if no rows |
 | `query.first(conn).optional()` | `query.optional(db)` — `null` if no rows |
+| `users.find(1)` | `from(Users.table).findBy(Users.id, 1)` — value type pinned by the column |
 
 ```dart
 final adults = await from(Users.table)
@@ -268,5 +269,6 @@ final bob = await from(Users.table)
     .optional(db);
 ```
 
-`find(pk)` (filter by primary key) is planned for a later milestone, once the schema models the primary key
-in a type-safe way — see the [roadmap](ROADMAP.md).
+diesel's bare `find(1)` auto-detects the primary key; `findBy(Users.id, 1)` is the type-safe equivalent (the
+value is checked against the column's type). An auto-PK bare `find` is a codegen follow-up — see the
+[roadmap](ROADMAP.md).

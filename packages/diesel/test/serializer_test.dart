@@ -323,6 +323,31 @@ void main() {
       expect(params, [18, 1]);
     });
 
+    test('findBy filters by a key column', () {
+      final (sql, params) = compileSelect(
+        from(Users.table).findBy(Users.id, 5).select([Users.name]).map(_ignore),
+      );
+      expect(sql,
+          'SELECT "users"."name" FROM "users" WHERE ("users"."id" = ?)');
+      expect(params, [5]);
+    });
+
+    test('findBy ANDs with an existing filter', () {
+      final (sql, params) = compileSelect(
+        from(Users.table)
+            .filter(Users.active.eq(true))
+            .findBy(Users.id, 5)
+            .select([Users.name])
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "users"."name" FROM "users" '
+        'WHERE (("users"."active" = ?) AND ("users"."id" = ?))',
+      );
+      expect(params, [1, 5]);
+    });
+
     test('update set() matches value()', () {
       final (aSql, aParams) = compileWrite(
         update(Users.table).set(Users.age.set(31)).where(Users.id.eq(1)),

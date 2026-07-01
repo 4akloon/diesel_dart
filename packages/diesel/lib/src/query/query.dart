@@ -85,6 +85,12 @@ final class Query<Scope> {
   /// diesel-style alias for [orderBy] (appends an ordering).
   Query<Scope> order(Ordering ordering) => orderBy(ordering);
 
+  /// diesel-style find-by-key: filter by [key] (typically the primary key); the
+  /// value type is pinned by the column, so `findBy(Users.id, 'x')` is a compile
+  /// error. ANDs with any existing predicate.
+  Query<Scope> findBy<T>(TableColumn<T, Scope> key, T value) =>
+      filter(key.eq(value));
+
   /// Emit `SELECT DISTINCT`.
   Query<Scope> distinct([bool value = true]) => _copy(distinct: value);
 
@@ -245,6 +251,10 @@ final class MappedQuery<R> implements SelectQuery<R> {
   /// diesel-style alias for [orderBy] (appends an ordering).
   MappedQuery<R> order(Ordering ordering) =>
       MappedQuery._(_query.order(ordering), _decode);
+
+  /// diesel-style find-by-key (see [Query.findBy]).
+  MappedQuery<R> findBy<T>(TableColumn<T, dynamic> key, T value) =>
+      filter(key.eq(value));
 
   MappedQuery<R> distinct([bool value = true]) =>
       MappedQuery._(_query.distinct(value), _decode);

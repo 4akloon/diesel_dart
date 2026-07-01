@@ -34,7 +34,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Projection | `.select((id, name))` | `.select([Users.id, Users.name])` | ✅ |
 | Inner/left join | `.inner_join/.left_join` | `.innerJoin/.leftJoin` (`on:` / `onFk:`) | ✅ |
 | Self-join / aliases | table aliasing | `Users.table.aliased('mgr')` + `alias.col(...)` | ✅ |
-| `find(pk)` | `users.find(1)` | — | ✗ (ROADMAP M4 — needs typed PK) |
+| `find(pk)` | `users.find(1)` | `findBy(Users.id, 1)` (type-safe; bare auto-PK `find` is a codegen follow-up) | ✅ |
 | `first` / `optional` | `.first(conn)` / `.optional()` | `query.first(db)` / `query.optional(db)` | ✅ |
 | distinct | `.distinct()` | `.distinct()` | ✅ |
 | Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | `countAll()`/`col.count()`/`sum()`/`avg()`/`min()`/`max()`, `.groupBy()`, `.having()` | ✅ (int + double cols) |

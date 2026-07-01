@@ -66,12 +66,17 @@ as M3 batch insert.)
 - Raw typed SQL escape hatch: `raw<T>(sql, type, as:)` (typed, readable selection) and `rawCondition(sql)`
   (boolean fragment for `having`/joined `where`), with `?` placeholders. Also `executeSql`/`queryRaw` for full raw.
 
-## ⬜ M4 — Derive parity
+## ◑ M4 — Derive parity (in progress)
 
+Done:
+- `find(pk)` — `findBy(key, value)` on `Query`/`MappedQuery` (type-safe filter by a key column; value type pinned
+  by the column, ANDs with any existing predicate). A bare `find(value)` that auto-detects the PK from the schema
+  is a codegen follow-up (see Identifiable below).
+
+Remaining:
 - `Selectable`-style subset/embedded structs (project a column subset into a class).
-- `Identifiable` (primary-key identity) and richer Associations (`belongs_to`, grouped child loads) beyond
-  today's read-only `@Relation` nesting.
-- `find(pk)` filter-by-primary-key, enabled by the type-safe `Identifiable` PK (deferred here from M2).
+- `Identifiable` (primary-key identity) — including a generated bare `find(value)` — and richer Associations
+  (`belongs_to`, grouped child loads) beyond today's read-only `@Relation` nesting.
 - Custom type-codec registry (enums, value objects) layered on `SqlType`.
 
 ## ⬜ M5 — Postgres backend (`diesel_postgres`)

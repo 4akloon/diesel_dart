@@ -211,6 +211,15 @@ void main() {
     );
   });
 
+  test('findBy fetches by primary key', () async {
+    await seed(); // Bob = 1
+    final bob = await from(Users.table)
+        .findBy(Users.id, 1)
+        .mapWith(userQueryable)
+        .first(db);
+    expect(bob.name, 'Bob');
+  });
+
   test('diesel-style terminals: load / first / optional', () async {
     await seed(); // Bob=30, Alice=17, Carol=42
 
