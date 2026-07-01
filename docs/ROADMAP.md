@@ -77,10 +77,11 @@ Done:
 - Custom type codecs: `SqlType<T>` is the extension point — a `const SqlType<T>(sqlName, encode, decode)` (with
   top-level tear-off codecs) maps any Dart type (e.g. enums), flowing through reads/writes/predicates. No separate
   registry needed; auto-mapping DB types in `print-schema` remains a possible enhancement.
+- Associations (`belongs_to`): `loadGroupedByFk(db, childTable, fk, parentKeys, readChild)` loads children for a
+  set of parents grouped by FK in a single query (avoids N+1), complementing read-side `@Relation` nesting.
 
 Remaining:
-- `Identifiable` (primary-key identity) — including a generated bare `find(value)` — and richer Associations
-  (`belongs_to`, grouped child loads) beyond today's read-only `@Relation` nesting.
+- `Identifiable`: a codegen-generated bare `find(value)` that auto-detects the primary key (today: `findBy`).
 
 ## ⬜ M5 — Postgres backend (`diesel_postgres`)
 

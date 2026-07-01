@@ -10,6 +10,7 @@ export 'src/annotations.dart';
 export 'src/ast/sql_node.dart' show Ordering, Projection;
 export 'src/connection.dart';
 export 'src/expression/expression.dart';
+export 'src/query/associations.dart';
 export 'src/query/execute.dart';
 export 'src/query/query.dart';
 export 'src/query/row_reader.dart';

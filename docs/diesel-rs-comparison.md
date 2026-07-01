@@ -67,7 +67,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | `Insertable` | `@Insertable(table)` → `toInsert()` | ✅ | |
 | `AsChangeset` | `@AsChangeset(table)` → `toUpdate()` | ✅ | SET-only; caller adds `.where`. |
 | `Identifiable` | — | ✗ | ROADMAP M4. |
-| `Associations` / `belongs_to` | `@Relation(fk, depth:)` (read-only nesting + self-mapping `xQuery`) | ◑ | Read-side joins/nesting; no grouped child loads yet. |
+| `Associations` / `belongs_to` | `@Relation` nesting + `loadGroupedByFk(...)` for grouped child loads | ✅ | Read-side nesting plus one-query, N+1-avoiding grouped children. |
 | field rename / skip | `@Column(col)` rename; read/write via `readOnly`/`writeOnly` | ✅ | `@ignore` was removed in favor of getters. |
 
 ## Types

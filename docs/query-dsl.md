@@ -272,3 +272,15 @@ final bob = await from(Users.table)
 diesel's bare `find(1)` auto-detects the primary key; `findBy(Users.id, 1)` is the type-safe equivalent (the
 value is checked against the column's type). An auto-PK bare `find` is a codegen follow-up — see the
 [roadmap](ROADMAP.md).
+
+## Associations (grouped child loads)
+
+`loadGroupedByFk` loads the children of many parents in one query and groups them by foreign key — the
+diesel `belonging_to(...).grouped_by(...)` pattern, which avoids N+1:
+
+```dart
+final users = await from(Users.table).map(userMapper.read).load(db);
+final postsByAuthor = await loadGroupedByFk(
+  db, Posts.table, Posts.authorId, users.map((u) => u.id).toList(), readPost);
+// Map<int, List<Post>>; every author id is present (empty list if no posts).
+```

@@ -375,6 +375,19 @@ void main() {
     expect(rows, [('Bob', 31)]);
   });
 
+  test('loadGroupedByFk groups children by parent (belongs_to)', () async {
+    await seed(); // Bob=1, Alice=2, Carol=3
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('a')).value(Posts.views.set(1)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(1)).value(Posts.title.set('b')).value(Posts.views.set(2)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(3)).value(Posts.authorId.set(3)).value(Posts.title.set('c')).value(Posts.views.set(3)));
+
+    final byAuthor =
+        await loadGroupedByFk(db, Posts.table, Posts.authorId, [1, 2, 3], readPost);
+    expect(byAuthor[1]!.map((p) => p.title), ['a', 'b']);
+    expect(byAuthor[2], isEmpty); // Alice has no posts, but the key is present
+    expect(byAuthor[3]!.map((p) => p.title), ['c']);
+  });
+
   test('custom SqlType codec (enum) round-trips', () async {
     await db.executeSql(
         'CREATE TABLE accounts (id INTEGER PRIMARY KEY, role TEXT NOT NULL)');
