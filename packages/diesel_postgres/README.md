@@ -11,9 +11,9 @@ The **Postgres backend** for [diesel_dart](../../README.md), on
   on SQLite and Postgres unchanged. Verified end-to-end against Postgres 16.
 - ✅ Introspection via `information_schema` (tables, columns, nullability, primary keys, foreign keys) for
   `print-schema`.
-- ⬜ Wiring `postgres://` into the CLI `ConnectionFactory`, and PG-native type codecs (`bool`, `timestamptz`,
-  `uuid`, `json`/`jsonb`, `numeric`, arrays). Today `int` / `text` / `real` columns work directly; the built-in
-  `bool` / `DateTime` codecs are SQLite-oriented and need per-dialect handling.
+- ✅ CLI `postgres://` wiring (`ConnectionFactory`) and cross-backend codecs, so `int`/`text`/`real`/`bool`/
+  `DateTime` columns all work (the `diesel_dart` CLI runs migrations + `print-schema` against Postgres).
+- ⬜ Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
 
 ## Usage
 

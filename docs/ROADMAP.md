@@ -1,108 +1,26 @@
 # Roadmap
 
-Direction for aligning diesel_dart with [diesel-rs](https://github.com/diesel-rs/diesel): **database
-compatibility** (share one database/migrations directory with the Rust `diesel` CLI) and **mirror behavior**
-(read like diesel). Priorities reflect agreed decisions: **SQLite-first** (Postgres deferred), and mirror
-behavior delivered as **non-breaking diesel-style aliases** rather than a rename.
+diesel_dart's alignment with [diesel-rs](https://github.com/diesel-rs/diesel) — database compatibility and
+mirror behavior. Feature-by-feature detail is in [`diesel-rs-comparison.md`](diesel-rs-comparison.md).
 
-Status legend: ✅ done · ◑ partial · ⬜ planned.
+## Done (M1–M5)
 
-See [`diesel-rs-comparison.md`](diesel-rs-comparison.md) for the feature-by-feature gap analysis this roadmap
-is derived from.
+- **M1 — DB compatibility:** migrations interoperate with the Rust `diesel` CLI on SQLite (`%Y-%m-%d-%H%M%S`
+  versions, matching `__diesel_schema_migrations` DDL, `run_on` format).
+- **M2 — Mirror-behavior aliases:** `filter` (ANDs), `order`, `eqAny`, `update().set()`, and terminals
+  `load` / `first` / `optional`.
+- **M3 — SQLite query parity:** aggregates + `group_by`/`having`, `distinct`, `RETURNING`, batch insert, upsert
+  (`ON CONFLICT`), raw typed `sql`.
+- **M4 — Derive parity:** `findBy`, Selectable subset getters, custom `SqlType` codecs, `belongs_to`
+  (`loadGroupedByFk`), and generated bare `findX(pk)`.
+- **M5 — Postgres backend (`diesel_postgres`):** `PostgresConnection` + `PostgresDialect` (`$N`) + introspection,
+  cross-backend `bool`/`DateTime` codecs, and CLI `postgres://` wiring — verified end-to-end against Postgres 16.
+  SQLite and Postgres run the same DSL, schema, and migrations unchanged.
 
----
+## Later (optional)
 
-## ✅ Done (M0 and earlier)
-
-- **Core query builder** — typed `from/where/orderBy/limit/offset/select`, predicates + `&`/`|`, writes
-  (`insertInto`/`update`/`deleteFrom`), serializer + dialect seam.
-- **Joins & relations** — `innerJoin`/`leftJoin` (`on:`/`onFk:`), self-joins via aliases, two-tier scope safety.
-- **Async-first `Connection`** + SQLite backend (`diesel_sqlite`), transactions with SAVEPOINTs.
-- **Migrations CLI** (`diesel_dart`) — generate/run/revert/redo/list, `database reset`, `setup`.
-- **`print-schema`** — dialect-agnostic introspection → typed Dart schema.
-- **Derives** — `@Queryable` (+ `@Relation`), `@Insertable`, `@AsChangeset`, `@Column(readOnly/writeOnly)`.
-- **M0 — Documentation** (this milestone): CLAUDE.md, READMEs, `docs/`, comparison, this roadmap.
-
----
-
-## ✅ M1 — diesel-rs database compatibility (SQLite, shared DB) — done
-
-The Rust `diesel` CLI and `diesel_dart` now produce an interchangeable migrations directory and tracker
-table on SQLite — the same database and `migrations/` directory can be driven by either tool:
-
-- Scaffolder emits diesel's `%Y-%m-%d-%H%M%S` version (e.g. `2024-01-15-123456`).
-  (`migration_scaffolder.dart`; `discover()` splits on the first `_`, so it already reads the dashed prefix.)
-- `__diesel_schema_migrations` DDL matches diesel: `version VARCHAR(50) PRIMARY KEY NOT NULL`,
-  `run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`. (`migration_runner.dart`)
-- `run_on` is written in diesel's `YYYY-MM-DD HH:MM:SS` form. (`migration_runner.dart`)
-- The example's migrations were renamed to the dashed format.
-
-> Config stays on `diesel.yaml` by design — `diesel.toml` support is intentionally **not** planned.
-
-## ✅ M2 — Mirror-behavior API aliases (non-breaking) — done
-
-diesel-named methods alongside the Dart-idiomatic ones, so code reads like diesel-rs:
-
-- `filter` — ANDs repeated calls (like diesel; distinct from `where`, which replaces).
-- `order` (alias for `orderBy`), `eqAny` (alias for `isIn`), `update().set()` (alias for `value`).
-- Execution terminals `query.load(db)` / `first(db)` / `optional(db)`, as an extension that keeps the core
-  query builder free of any `Connection` dependency.
-- Name mapping documented in [`diesel-rs-comparison.md`](diesel-rs-comparison.md) and [`query-dsl.md`](query-dsl.md).
-
-Deferred: `find(pk)` (moved to M4 — needs a type-safe primary key). (Insert `values([...])` was later delivered
-as M3 batch insert.)
-
-## ✅ M3 — SQLite query parity — done
-
-- Aggregates (`countAll()`, `col.count()/sum()/avg()/min()/max()`), `groupBy` / `having`, and `distinct`. Built on
-  a generalized projection (`Selection` = a column or an `Aggregate`), with new AST nodes (`FunctionNode`,
-  `Projection`) so the serializer stays schema-free; `RowReader.get` now accepts any `Selection`. Aggregates cover
-  int and double columns.
-- `RETURNING` on writes: `stmt.returning([cols]).map(...)` + `Connection.executeReturning` (returns decoded rows;
-  unlocks reading autoincrement ids after insert). UPDATE/DELETE RETURNING work too.
-- Batch insert: `insertInto(t).values([[...], [...]])` (multiple rows in one statement); composes with RETURNING.
-- Upsert: `insertInto(t).onConflict([cols]).doNothing()` / `.doUpdate([col.setToExcluded()/col.set(v)])`
-  (`ON CONFLICT … DO NOTHING / DO UPDATE SET`, with `excluded.col` support).
-- Raw typed SQL escape hatch: `raw<T>(sql, type, as:)` (typed, readable selection) and `rawCondition(sql)`
-  (boolean fragment for `having`/joined `where`), with `?` placeholders. Also `executeSql`/`queryRaw` for full raw.
-
-## ✅ M4 — Derive parity — done
-
-Done:
-- `find(pk)` — `findBy(key, value)` on `Query`/`MappedQuery` (type-safe filter by a key column; value type pinned
-  by the column, ANDs with any existing predicate). A bare `find(value)` that auto-detects the PK from the schema
-  is a codegen follow-up (see Identifiable below).
-- `Selectable`-style subsets: a `@Queryable` class mapping a subset of columns generates a select-narrowing
-  `xQuery` getter (`from(t).select([subset]).map(...)`), so it fetches only those columns.
-- Custom type codecs: `SqlType<T>` is the extension point — a `const SqlType<T>(sqlName, encode, decode)` (with
-  top-level tear-off codecs) maps any Dart type (e.g. enums), flowing through reads/writes/predicates. No separate
-  registry needed; auto-mapping DB types in `print-schema` remains a possible enhancement.
-- Associations (`belongs_to`): `loadGroupedByFk(db, childTable, fk, parentKeys, readChild)` loads children for a
-  set of parents grouped by FK in a single query (avoids N+1), complementing read-side `@Relation` nesting.
-- `Identifiable`: codegen detects the `PrimaryKey` column and emits a bare `findX(pkValue)` (e.g. `findUser(1)`)
-  that composes the class's query getter with the type-safe `findBy`.
-
-## ✅ M5 — Postgres backend (`diesel_postgres`) — done
-
-- `PostgresDialect` — numbered `$N` placeholders (1-based) + double-quoted identifiers.
-- `PostgresConnection` (on `package:postgres` v3): the full `Connection` interface — `fetch`, `execute`,
-  `executeReturning`, `executeSql`, `queryRaw`, `transaction` (with savepoints), and `introspect`
-  (`information_schema`: tables/columns/nullability/PKs/FKs). **Verified end-to-end against Postgres 16 (Docker)** —
-  the same typed query DSL runs on SQLite and Postgres unchanged.
-
-- Cross-backend type codecs: `SqlType` encoders produce canonical Dart values and each dialect's `encodeParam`
-  adapts them (SQLite `bool`→int / `DateTime`→epoch-ms; Postgres native), with lenient decoders. `int`/`text`/
-  `real`/`bool`/`DateTime` all round-trip on both backends (verified against SQLite and PG 16).
-- CLI: `ConnectionFactory` opens `postgres://` (and `postgresql://`) URLs, so `diesel_dart` runs migrations and
-  `print-schema` against Postgres. Verified end-to-end vs PG 16 — the same migrations produce the same generated
-  schema as SQLite (true cross-tool DB compatibility).
-
-Later (optional):
-- Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
-
-## ⬜ M6 — Later
-
-- MySQL backend.
-- Connection pooling.
-- Instrumentation / query logging.
-- Schema-first (auto-diff migrations from a Dart schema) — the experimental "Stage 4" direction.
+- MySQL backend (`diesel_mysql`).
+- Connection pooling; query logging / instrumentation.
+- Advanced Postgres types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
+- A true Postgres `database reset` (drop schema); reading `diesel.toml` is intentionally out of scope.
+- Schema-first: a Dart schema as the source of truth with auto-diff migrations (experimental).
