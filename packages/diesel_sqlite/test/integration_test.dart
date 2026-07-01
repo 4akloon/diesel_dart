@@ -4,6 +4,20 @@ import 'package:test/test.dart';
 
 import 'test_schema.dart';
 
+// A custom column type: an enum stored by name via a const SqlType with top-level
+// codec tear-offs (const-compatible, so it works in `static const` columns).
+enum Role { admin, user, guest }
+
+Object? _encodeRole(Role r) => r.name;
+Role _decodeRole(Object? v) => Role.values.byName(v as String);
+const roleType = SqlType<Role>('TEXT', _encodeRole, _decodeRole);
+
+abstract final class Accounts {
+  static const id = PrimaryKey<int, Accounts>('accounts', 'id', SqlType.integer);
+  static const role = ValueColumn<Role, Accounts>('accounts', 'role', roleType);
+  static const table = TableRef<Accounts>('accounts', [id, role]);
+}
+
 void main() {
   late SqliteConnection db;
 
@@ -359,6 +373,30 @@ void main() {
         .map((r) => (r.get(Users.name), r.get(nextAge)))
         .load(db);
     expect(rows, [('Bob', 31)]);
+  });
+
+  test('custom SqlType codec (enum) round-trips', () async {
+    await db.executeSql(
+        'CREATE TABLE accounts (id INTEGER PRIMARY KEY, role TEXT NOT NULL)');
+    await db.execute(insertInto(Accounts.table)
+        .value(Accounts.id.set(1))
+        .value(Accounts.role.set(Role.admin)));
+    await db.execute(insertInto(Accounts.table)
+        .value(Accounts.id.set(2))
+        .value(Accounts.role.set(Role.guest)));
+
+    final roles = await from(Accounts.table)
+        .order(Accounts.id.asc())
+        .map((r) => r.get(Accounts.role))
+        .load(db);
+    expect(roles, [Role.admin, Role.guest]);
+
+    // The custom type also encodes values inside predicates.
+    final admins = await from(Accounts.table)
+        .where(Accounts.role.eq(Role.admin))
+        .map((r) => r.get(Accounts.id))
+        .load(db);
+    expect(admins, [1]);
   });
 
   test('INSERT/UPDATE ... RETURNING', () async {

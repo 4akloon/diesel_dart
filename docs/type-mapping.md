@@ -42,6 +42,21 @@ uniformly, so a future Postgres backend — which *does* have native `bool`/`tim
 
 ## Custom type codecs
 
-A registry for custom/enum codecs (the analog of diesel-rs `ToSql`/`FromSql`) is not implemented yet; see
-[ROADMAP M4](ROADMAP.md). Today, model a custom type by choosing the closest built-in `SqlType` and
-converting at the edges of your data classes.
+`SqlType<T>` **is** the codec extension point (the analog of diesel-rs `ToSql`/`FromSql`) — its constructor takes
+`encode`/`decode`. Keep it `const` by using top-level tear-off codecs, so it works in `static const` columns.
+For example, an enum stored by name:
+
+```dart
+enum Role { admin, user, guest }
+
+Object? _encodeRole(Role r) => r.name;
+Role _decodeRole(Object? v) => Role.values.byName(v as String);
+const roleType = SqlType<Role>('TEXT', _encodeRole, _decodeRole);
+
+// in the schema:
+static const role = ValueColumn<Role, Accounts>('accounts', 'role', roleType);
+```
+
+The custom type flows through reads (`r.get(Accounts.role)` → `Role`), writes (`Accounts.role.set(Role.admin)`),
+and predicates (`Accounts.role.eq(Role.admin)`). `print-schema` still emits built-in types, so swap in a custom
+`SqlType` by editing the generated schema; auto-mapping DB types to custom codecs is a possible future enhancement.

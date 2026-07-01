@@ -74,11 +74,13 @@ Done:
   is a codegen follow-up (see Identifiable below).
 - `Selectable`-style subsets: a `@Queryable` class mapping a subset of columns generates a select-narrowing
   `xQuery` getter (`from(t).select([subset]).map(...)`), so it fetches only those columns.
+- Custom type codecs: `SqlType<T>` is the extension point — a `const SqlType<T>(sqlName, encode, decode)` (with
+  top-level tear-off codecs) maps any Dart type (e.g. enums), flowing through reads/writes/predicates. No separate
+  registry needed; auto-mapping DB types in `print-schema` remains a possible enhancement.
 
 Remaining:
 - `Identifiable` (primary-key identity) — including a generated bare `find(value)` — and richer Associations
   (`belongs_to`, grouped child loads) beyond today's read-only `@Relation` nesting.
-- Custom type-codec registry (enums, value objects) layered on `SqlType`.
 
 ## ⬜ M5 — Postgres backend (`diesel_postgres`)
 

@@ -77,7 +77,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Integer/text/real/bool/blob | `sql_types::*` | `SqlType.integer/text/real/boolean/blob` | ✅ (SQLite mappings) |
 | Timestamp | `Timestamp`/`Timestamptz` | `SqlType.dateTime` (epoch ms in SQLite) | ◑ |
 | Nullable | `Nullable<T>` | `SqlType.*OrNull` (`T?`) | ✅ |
-| Custom / enum codecs | `#[derive(...)]` + `ToSql`/`FromSql` | — | ✗ (ROADMAP M4) |
+| Custom / enum codecs | `#[derive(...)]` + `ToSql`/`FromSql` | custom `const SqlType<T>(sqlName, encode, decode)` | ✅ |
 | Postgres numeric/json/uuid/array | native | — | ✗ (ROADMAP M5) |
 
 ## CLI & configuration
