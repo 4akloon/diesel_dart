@@ -24,6 +24,7 @@ trivially unit-testable and makes new backends drop-in.
 | `packages/diesel_postgres` | `diesel_postgres` | Postgres backend: `PostgresConnection` + `PostgresDialect` (on `package:postgres`), with `information_schema` introspection. |
 | `packages/diesel_cli` | `diesel_cli` | `diesel_dart` executable: migrations + `print-schema`. |
 | `packages/diesel_codegen` | `diesel_codegen` | `build_runner`/`source_gen` derives for the annotations. |
+| `packages/diesel_devtools` | `diesel_devtools` | DevTools inspector: `Connection` registry + `InspectorService` over `ext.diesel.*` VM service extensions (browse tables, view rows, run SQL). Runtime is pure Dart; the Flutter UI lives in `devtools_extension/`. |
 | `example/` | `diesel_example` | End-to-end demo (migrations → schema → models → queries). |
 
 Dart SDK constraint: `>=3.5.0 <4.0.0`.

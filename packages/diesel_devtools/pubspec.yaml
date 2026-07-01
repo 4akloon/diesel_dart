@@ -1,0 +1,17 @@
+name: diesel_devtools
+description: >-
+  DevTools inspector for the Diesel Dart ORM — browse tables, view rows, and run
+  raw SQL against live connections from a Dart/Flutter DevTools extension.
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  diesel: ^0.0.1
+
+dev_dependencies:
+  diesel_sqlite: ^0.0.1
+  test: ^1.26.3
