@@ -2,6 +2,9 @@
 
 pubspec.lock
 
+# DevTools per-developer state (created when you enable the extension)
+devtools_options.yaml
+
 # Compiled DevTools extension web app — regenerate with:
 #   cd packages/diesel_devtools_extension && dart run devtools_extensions \
 #     build_and_copy --source=. --dest=../diesel_devtools/extension/devtools
