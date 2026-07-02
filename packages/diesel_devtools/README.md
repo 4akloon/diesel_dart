@@ -31,17 +31,33 @@ final conn = SqliteConnection.open('app.db'); // or PostgresConnection…
 DieselDevTools.register(conn, name: 'main');
 ```
 
-Run your app with the VM service enabled (Flutter debug mode does this automatically; for a CLI use
-`dart run --observe …`), open DevTools, and select the **diesel** tab.
-
-The extension's compiled web app (`extension/devtools/build/`) is git-ignored; build it once from the
-UI app before the tab will load:
+Then build the extension's web app once (it's git-ignored) and open DevTools.
 
 ```bash
 cd packages/diesel_devtools_extension
 dart run devtools_extensions build_and_copy \
   --source=. --dest=../diesel_devtools/extension/devtools
 ```
+
+**Opening the diesel tab.** DevTools discovers extensions from the project root, which it learns from
+the **Dart Tooling Daemon (DTD)** — so a plain `dart run --observe` isn't enough, and the Extensions
+menu stays empty. Two working paths:
+
+- **From an IDE (simplest):** open the project in VS Code / IntelliJ, run your app (or
+  `tool/inspector_demo.dart`) in debug, then "Open DevTools" from the run session — the IDE wires up
+  the app + DTD automatically.
+- **From the CLI:** run with `--print-dtd`, then launch DevTools with both URIs:
+
+  ```bash
+  # terminal 1 — prints a VM service URI AND a DTD URI:
+  dart run --observe --print-dtd tool/inspector_demo.dart
+  # terminal 2 — pass your DTD uri + the VM service uri:
+  dart devtools --dtd-uri=ws://127.0.0.1:<port>/<secret>= http://127.0.0.1:<port>/
+  ```
+
+Finally, open the **Extensions** menu (upper-right in DevTools) and enable **diesel** — extensions are
+disabled until you turn them on; then the **diesel** tab appears. (Flutter debug mode / `flutter run`
+starts a DTD for you, so there the tab shows up without extra flags.)
 
 Backend-agnostic: because it targets the `Connection` interface, the same inspector works for SQLite and
 Postgres with no extra code.
