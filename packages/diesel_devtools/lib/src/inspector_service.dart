@@ -1,5 +1,6 @@
 import 'package:diesel/diesel.dart';
 
+import 'column_filter.dart';
 import 'diesel_dev_tools.dart';
 import 'dto/column_dto.dart';
 import 'dto/foreign_key_dto.dart';
@@ -32,9 +33,10 @@ final class InspectorService {
 
   /// Reads one page of rows from [table] on instance [id].
   ///
-  /// [table] and [orderBy] are validated against the introspected schema before
-  /// being interpolated (identifiers can't be parameterized), which also
-  /// rejects unknown names. [limit] is clamped to `1..1000`.
+  /// [table]/[orderBy]/[filters] columns are validated against the introspected
+  /// schema before being interpolated (identifiers can't be parameterized),
+  /// which also rejects unknown names; filter *values* are bound as parameters.
+  /// [limit] is clamped to `1..1000`.
   Future<TablePageDto> getTableData(
     String id, {
     required String table,
@@ -42,6 +44,7 @@ final class InspectorService {
     int offset = 0,
     String? orderBy,
     bool desc = false,
+    List<ColumnFilter> filters = const [],
   }) async {
     final conn = _connection(id);
     final target = await _requireTable(conn, table);
@@ -53,17 +56,20 @@ final class InspectorService {
     final safeLimit = limit.clamp(1, 1000);
     final safeOffset = offset < 0 ? 0 : offset;
 
-    final sql = StringBuffer('SELECT * FROM ${_quote(table)}');
-    if (orderBy != null) {
-      sql.write(' ORDER BY ${_quote(orderBy)}${desc ? ' DESC' : ' ASC'}');
-    }
-    // limit/offset are validated ints, so inlining them is injection-safe and
-    // sidesteps per-backend placeholder syntax (`?` vs `$1`).
-    sql.write(' LIMIT $safeLimit OFFSET $safeOffset');
+    // WHERE is shared by the data + count queries (same params, same order), so
+    // build it once. LIMIT/OFFSET/ORDER BY carry no params.
+    final binds = _Binds(_backend(id));
+    final where = _buildWhere(target, filters, binds);
 
-    final rawRows = await conn.queryRaw(sql.toString());
-    final countRows =
-        await conn.queryRaw('SELECT count(*) AS c FROM ${_quote(table)}');
+    final data = StringBuffer('SELECT * FROM ${_quote(table)}$where');
+    if (orderBy != null) {
+      data.write(' ORDER BY ${_quote(orderBy)}${desc ? ' DESC' : ' ASC'}');
+    }
+    data.write(' LIMIT $safeLimit OFFSET $safeOffset');
+
+    final rawRows = await conn.queryRaw(data.toString(), binds.params);
+    final countRows = await conn.queryRaw(
+        'SELECT count(*) AS c FROM ${_quote(table)}$where', binds.params);
     final total = (countRows.first['c'] as num?)?.toInt() ?? 0;
 
     // Project in schema-column order so the grid is deterministic regardless of
@@ -79,6 +85,39 @@ final class InspectorService {
       limit: safeLimit,
       offset: safeOffset,
     );
+  }
+
+  /// Updates a single row of [table] on instance [id]: `SET changes WHERE key`.
+  ///
+  /// [key] must identify the row (typically its primary key); an empty [key] is
+  /// rejected so a stray edit can't rewrite the whole table. Column names are
+  /// validated against the schema; values are bound as parameters.
+  Future<void> updateRow(
+    String id, {
+    required String table,
+    required Map<String, Object?> key,
+    required Map<String, Object?> changes,
+  }) async {
+    if (changes.isEmpty) return;
+    if (key.isEmpty) {
+      throw const InspectorException('No key columns to identify the row');
+    }
+    final conn = _connection(id);
+    final target = await _requireTable(conn, table);
+    final binds = _Binds(_backend(id));
+
+    final sets = [
+      for (final e in changes.entries)
+        '${_quote(_requireColumn(target, e.key).name)} = ${binds.bind(e.value)}',
+    ];
+    final conds = [
+      for (final e in key.entries)
+        '${_quote(_requireColumn(target, e.key).name)} = ${binds.bind(e.value)}',
+    ];
+
+    final sql = 'UPDATE ${_quote(table)} SET ${sets.join(', ')} '
+        'WHERE ${conds.join(' AND ')}';
+    await conn.executeSql(sql, binds.params);
   }
 
   /// Runs an arbitrary SQL statement (dev-only; reads *and* writes).
@@ -112,8 +151,39 @@ final class InspectorService {
   );
   static final _returning = RegExp(r'\breturning\b', caseSensitive: false);
 
+  static const _comparisons = {
+    'eq': '=',
+    'ne': '<>',
+    'lt': '<',
+    'le': '<=',
+    'gt': '>',
+    'ge': '>=',
+  };
+
   bool _returnsRows(String sql) =>
       _readLead.hasMatch(sql) || _returning.hasMatch(sql);
+
+  String _buildWhere(
+      IntrospectedTable table, List<ColumnFilter> filters, _Binds binds) {
+    if (filters.isEmpty) return '';
+    final terms = <String>[];
+    for (final f in filters) {
+      final col = _quote(_requireColumn(table, f.column).name);
+      switch (f.op) {
+        case 'isNull':
+          terms.add('$col IS NULL');
+        case 'isNotNull':
+          terms.add('$col IS NOT NULL');
+        case 'like':
+          terms.add('$col LIKE ${binds.bind('${f.value ?? ''}')}');
+        default:
+          final op = _comparisons[f.op];
+          if (op == null) throw InspectorException('Unknown operator: ${f.op}');
+          terms.add('$col $op ${binds.bind(f.value)}');
+      }
+    }
+    return ' WHERE ${terms.join(' AND ')}';
+  }
 
   SqlResultDto _rowsToResult(List<Map<String, Object?>> rows) {
     if (rows.isEmpty) {
@@ -138,11 +208,25 @@ final class InspectorService {
     return conn;
   }
 
+  String _backend(String id) {
+    for (final i in DieselDevTools.instances) {
+      if (i.id == id) return i.backend;
+    }
+    return 'sqlite';
+  }
+
   Future<IntrospectedTable> _requireTable(Connection conn, String table) async {
     for (final t in await conn.introspect()) {
       if (t.name == table) return t;
     }
     throw InspectorException('Unknown table: $table');
+  }
+
+  IntrospectedColumn _requireColumn(IntrospectedTable table, String column) {
+    for (final c in table.columns) {
+      if (c.name == column) return c;
+    }
+    throw InspectorException('Unknown column: $column');
   }
 
   static TableDto _table(IntrospectedTable t) =>
@@ -162,4 +246,24 @@ final class InspectorService {
 
   static String _quote(String identifier) =>
       '"${identifier.replaceAll('"', '""')}"';
+}
+
+/// Accumulates bound parameters and emits backend-appropriate placeholders
+/// (`?` for SQLite, `$N` for Postgres). A Dart `bool` is adapted to `0/1` for
+/// SQLite, whose driver (via the raw query path) takes integers, not booleans.
+final class _Binds {
+  final String backend;
+  final List<Object?> params = [];
+  int _n = 0;
+
+  _Binds(this.backend);
+
+  String bind(Object? value) {
+    params.add(backend == 'postgres' ? value : _forSqlite(value));
+    _n++;
+    return backend == 'postgres' ? '\$$_n' : '?';
+  }
+
+  static Object? _forSqlite(Object? value) =>
+      value is bool ? (value ? 1 : 0) : value;
 }

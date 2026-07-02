@@ -91,6 +91,77 @@ void main() {
     expect(page.rows.first[1], 'Cara');
   });
 
+  test('getTableData filters rows and adjusts total', () async {
+    final page = await service.getTableData(
+      id,
+      table: 'users',
+      filters: const [ColumnFilter('name', 'eq', 'Alice')],
+    );
+    expect(page.total, 1);
+    expect(page.rows.single[1], 'Alice');
+  });
+
+  test('getTableData supports comparison, like and null filters', () async {
+    final gt = await service.getTableData(
+      id,
+      table: 'users',
+      orderBy: 'id',
+      filters: const [ColumnFilter('id', 'ge', 2)],
+    );
+    expect([for (final r in gt.rows) r[1]], ['Bob', 'Cara']);
+
+    final like = await service.getTableData(
+      id,
+      table: 'users',
+      filters: const [ColumnFilter('name', 'like', 'C%')],
+    );
+    expect(like.rows.single[1], 'Cara');
+
+    final nulls = await service.getTableData(
+      id,
+      table: 'users',
+      filters: const [ColumnFilter('email', 'isNull')],
+    );
+    expect(nulls.rows.single[1], 'Bob');
+  });
+
+  test('getTableData rejects unknown filter column and operator', () async {
+    expect(
+      () => service.getTableData(id,
+          table: 'users', filters: const [ColumnFilter('nope', 'eq', 1)]),
+      throwsA(isA<InspectorException>()),
+    );
+    expect(
+      () => service.getTableData(id,
+          table: 'users', filters: const [ColumnFilter('id', 'bogus', 1)]),
+      throwsA(isA<InspectorException>()),
+    );
+  });
+
+  test('updateRow changes a row by key', () async {
+    await service.updateRow(
+      id,
+      table: 'users',
+      key: const {'id': 1},
+      changes: const {'name': 'Alicia', 'email': null},
+    );
+    final page = await service.getTableData(
+      id,
+      table: 'users',
+      filters: const [ColumnFilter('id', 'eq', 1)],
+    );
+    expect(page.rows.single[1], 'Alicia');
+    expect(page.rows.single[2], isNull);
+  });
+
+  test('updateRow rejects an empty key', () async {
+    expect(
+      () => service.updateRow(id,
+          table: 'users', key: const {}, changes: const {'name': 'x'}),
+      throwsA(isA<InspectorException>()),
+    );
+  });
+
   test('getTableData rejects unknown table and column', () async {
     expect(
       () => service.getTableData(id, table: 'ghosts'),

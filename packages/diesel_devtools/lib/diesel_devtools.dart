@@ -6,6 +6,7 @@
 /// service (debug / `--observe`) and are absent from release builds.
 library;
 
+export 'src/column_filter.dart' show ColumnFilter;
 export 'src/diesel_dev_tools.dart' show DieselDevTools;
 export 'src/dto/column_dto.dart' show ColumnDto;
 export 'src/dto/foreign_key_dto.dart' show ForeignKeyDto;

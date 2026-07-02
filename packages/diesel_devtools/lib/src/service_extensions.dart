@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 
+import 'column_filter.dart';
 import 'inspector_service.dart';
 
 const _service = InspectorService();
@@ -27,8 +28,20 @@ void installServiceExtensions() {
       offset: int.tryParse(p['offset'] ?? '') ?? 0,
       orderBy: p['orderBy'],
       desc: p['desc'] == 'true',
+      filters: _filters(p['filters']),
     );
     return page.toJson();
+  });
+
+  _register('ext.diesel.updateRow', (p) async {
+    await _service.updateRow(
+      _require(p, 'id'),
+      table: _require(p, 'table'),
+      key: (jsonDecode(_require(p, 'key')) as Map).cast<String, Object?>(),
+      changes:
+          (jsonDecode(_require(p, 'changes')) as Map).cast<String, Object?>(),
+    );
+    return {'ok': true};
   });
 
   _register('ext.diesel.runSql', (p) async {
@@ -56,6 +69,13 @@ void _register(String name, _Handler handler) {
       );
     }
   });
+}
+
+List<ColumnFilter> _filters(String? raw) {
+  if (raw == null || raw.isEmpty) return const [];
+  return [
+    for (final f in jsonDecode(raw) as List) ColumnFilter.fromJson(f as Map),
+  ];
 }
 
 String _require(Map<String, String> params, String key) {
